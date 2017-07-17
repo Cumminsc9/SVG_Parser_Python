@@ -5,6 +5,8 @@
       <option name="ignoredIdentifiers">
         <list>
           <option value="str.__or__" />
+          <option value="str.__getitem__" />
+          <option value="str.value" />
         </list>
       </option>
     </inspection_tool>
