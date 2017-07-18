@@ -9,7 +9,6 @@ count_iteration = None
 relations_list = []
 class_to_build = []
 
-
 class ClassToBuild(object):
     def __init__(self, class_type, class_name, class_variables, class_constructors, class_methods):
         self.class_type = class_type
@@ -53,16 +52,15 @@ class Constructor(object):
         self.constructor_arguments = constructor_arguments
 
     def print_constructor(self):
-        return ("ACCESS TYPE: %s \n\t\tNAME: %s \n\t\tARGUMENTS: %s\n" % (
-            self.constructor_access_type, self.constructor_name, self.constructor_arguments))
+        if self.constructor_arguments is not None:
+            return ("ACCESS TYPE: %s \n\t\tNAME: %s \n\t\tARGUMENTS: %s\n" % (
+                self.constructor_access_type, self.constructor_name, self.constructor_arguments))
+        else:
+            return ("ACCESS TYPE: %s \n\t\tNAME: %s \n\t\tARGUMENTS: None\n" % (
+                self.constructor_access_type, self.constructor_name))
 
 
 class ClassMember(object):
-    def __init__(self, class_name, class_member_type, class_member_value):
-        self.class_name = class_name
-        self.class_member_type = class_member_type
-        self.class_member_value = class_member_value
-
     def __init__(self, class_type, class_name, class_member_type, class_member_value):
         self.class_type = class_type
         self.class_name = class_name
@@ -75,10 +73,10 @@ class ClassMember(object):
 
 
 class Relation(object):
-    def __init__(self, location, value, type):
+    def __init__(self, location, value, rel_type):
         self.location = location
         self.value = value
-        self.type = type
+        self.type = rel_type
 
     def __eq__(self, other):
         return self.type == other.type
@@ -92,15 +90,6 @@ class Element(object):
         self.location_ele = location_element
         self.title_ele = title_element
         self.text_ele = text_element
-
-    def get_title(self):
-        return self.title_ele
-
-    def get_location(self):
-        return self.location_ele
-
-    def get_text(self):
-        return self.text_ele
 
     def check_is_class(self):
         if self.title_ele == Title.CLAZZ:
@@ -161,7 +150,6 @@ def check_member(members):
     class_member = members.class_name
     class_method = members.class_member_value
     str_array = members.class_member_value.split("\\(")[0].split(" ")
-    class_name = str()
 
     if len(str_array) >= 2:
         class_name = str_array[1]
@@ -198,12 +186,11 @@ def arrange_method_variables():
                     if class_type != Title.ENUM:
                         member_location = float(r.location)
                         class_location = float(entry[0])
-                        f = class_location - member_location
-                        if f <= 0:
-                            if f <= -10:
+                        new_cal_location = class_location - member_location
+                        if new_cal_location <= 0:
+                            if new_cal_location <= -10:
                                 continue
                             else:
-                                # class_type, class_name, class_member_type, class_member_value
                                 temp_class.append(ClassMember(entry[1][1], entry[1][0], r.type, r.value))
 
         class_list.append(temp_class)
@@ -218,7 +205,7 @@ def check_for_class(current_iteration, entry):
         if count_iteration is not None:
             count_iteration[i] = current_iteration
 
-    location_entry = str(entry.get_location())
+    location_entry = str(entry.location_ele)
     xyz = re.search('\(([^)]+)', location_entry)
     if xyz is None:
         xyz = "0.0"
@@ -226,14 +213,11 @@ def check_for_class(current_iteration, entry):
         xyz = xyz.group(1)
     i += 1
 
-    return [str(xyz).split(",")[0], str(entry.get_text()), entry.get_title()]
+    return [str(xyz).split(",")[0], str(entry.text_ele), entry.title_ele]
 
 
 def parse_variable(class_members):
     variable_list = []
-    access_type = str()
-    variable_name = str()
-    return_type = str()
 
     for c in class_members:
         if c.class_member_type != Title.CONSTRUCTOR and c.class_member_type != Title.METHOD:
@@ -315,8 +299,6 @@ def parse_variable_return_type(cv):
 def parse_constructor(constructor):
     constructor_list = []
     new_arg_dict = dict
-    access_type = str()
-    constructor_name = str()
 
     for cm in constructor:
         if cm.class_member_type == Title.METHOD:
@@ -333,16 +315,13 @@ def parse_constructor(constructor):
                     if new_arg_dict is not None:
                         constructor_list.append(Constructor(access_type, constructor_name, new_arg_dict))
                     else:
-                        constructor_list.append(Constructor(access_type, constructor_name))
+                        constructor_list.append(Constructor(access_type, constructor_name, None))
 
     return constructor_list
 
 
 def parse_method(method):
     method_list = []
-    access_type = str()
-    method_name = str()
-    return_type = str()
 
     for cm in method:
         new_arg_dict = {}
@@ -432,14 +411,14 @@ def begin_conversion(content_list):
 
 def output_classes(class_list):
     for cl in class_list:
-        print cl.class_name
+        print "CLASS: " + cl.class_name
 
-        print "\tVariables"
+        print "\tVARIABLES:"
         class_attributes = cl.class_variables
         for ca in class_attributes:
             print "\t\t" + ca.print_attribute()
 
-        print "\tMethods"
+        print "\tMETHODS:"
         class_methods = cl.class_methods
         for cm in class_methods:
             print "\t\t" + cm.print_method()
